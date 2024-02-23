@@ -1,0 +1,240 @@
+<!-- Imports -->
+<link rel="import" href="../vaadin-date-picker/vaadin-date-picker.html">
+
+<link rel="import" href="../strolch-wc-styles/strolch-wc-app-style.html">
+<link rel="import" href="../strolch-wc-util-behavior/strolch-wc-component-behavior.html">
+
+<dom-module id="strolch-wc-date-picker">
+    <template>
+
+        <!-- Style -->
+        <style is="custom-style" include="strolch-wc-app-style">
+            vaadin-date-picker {
+                --vaadin-date-picker-yearscroller: {
+                    color: var(--app-dark-highlight-fg-color);
+                    background-color: var(--app-dark-highlight-bg-color);
+                    overflow: initial;
+                };
+                --vaadin-date-picker-calendar-cell-selected: {
+                    color: var(--app-regular-highlight-fg-color);
+                    background-color: var(--app-regular-highlight-bg-color);
+                    border-radius: 2px;
+                };
+                --vaadin-date-picker-calendar-cell-focused: {
+                    color: var(--app-dark-highlight-fg-color);
+                    background-color: var(--app-dark-highlight-bg-color);
+                };
+                --vaadin-date-picker-calendar-cell-today: {
+                    color: unset;
+                    background-color: unset;
+                    font-weight: bold;
+                };
+                --vaadin-date-picker-footer: {
+                    color: var(--google-grey-700);
+                };
+            }
+        </style>
+
+        <!-- Requests -->
+
+        <!-- Content -->
+        <vaadin-date-picker id="datePicker"
+                            label="[[label]]"
+                            value="{{stringValue}}"
+                            i18n="{{i18n}}"
+                            min="[[minString]]"
+                            max="[[maxString]]"
+                            auto-validate$="[[required]]"></vaadin-date-picker>
+
+    </template>
+
+    <script>
+        Polymer({
+
+            /* Component */
+            is: "strolch-wc-date-picker",
+            behaviors: [
+                StrolchComponentBehavior
+            ],
+
+            /* Properties */
+            properties: {
+                value: {
+                    type: Date,
+                    observer: "observeValue",
+                    notify: true
+                },
+                stringValue: {
+                    type: String,
+                    observer: "observeStringValue"
+                },
+                min: {
+                    type: String,
+                    observer: "observeMin",
+                },
+                minString: {
+                    type: String
+                },
+                max: {
+                    type: String,
+                    observer: "observeMax",
+                },
+                maxString: {
+                    type: String
+                },
+                required: {
+                    type: Boolean,
+                    observer: "observeRequired"
+                },
+                allowEpoch: {
+                    type: Boolean
+                },
+                i18n: {
+                    type: Object,
+                    value: {
+                        // An array with the full names of months starting with January.
+                        monthNames: [
+                            "January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"
+                        ],
+
+                        // An array of weekday names starting with Sunday. Used in screen reader announcements.
+                        weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+
+                        // An array of short weekday names starting with Sunday. Displayed in the calendar.
+                        weekdaysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+
+                        // An integer indicating the first day of the week (0 = Sunday, 1 = Monday, etc.).
+                        firstDayOfWeek: 0,
+
+                        // Used in screen reader announcements along with week numbers, if they are displayed.
+                        week: "Week",
+
+                        // Translation of the Calendar icon button title.
+                        calendar: "Calendar",
+
+                        // Translation of the Clear icon button title.
+                        clear: "Clear",
+
+                        // Translation of the Today shortcut button text.
+                        today: "Today",
+
+                        // Translation of the Cancel button text.
+                        cancel: "Cancel",
+
+                        // A function to format given `Date` object as date string.
+                        formatDate: function (d) {
+                            return Strolch.getDateString(d, true);
+                        },
+
+                        // A function to parse the given text to a `Date` object.
+                        // Must properly parse (at least) text formatted by `formatDate`.
+                        // Setting the property to null will disable keyboard input feature.
+                        parseDate: function (text) {
+                            return Strolch.getDate(text);
+                        },
+
+                        // A function to format given `monthName` and `fullYear` integer as calendar title string.
+                        formatTitle: function (monthName, fullYear) {
+                            return monthName + " " + fullYear;
+                        }
+                    }
+                }
+            },
+
+            /* Computations */
+
+            /* Observers */
+            observers: [],
+            observeValue: function (newValue, oldValue) {
+                // get the date value as a string
+                var stringValue = this._dateToString(newValue);
+
+                // only update it if there are any changes
+                if (stringValue !== this.stringValue) {
+                    this.set("stringValue", stringValue);
+                }
+            },
+            observeMin: function (newValue, oldValue) {
+                // get the date value as a string
+                var stringValue = this._dateToString(newValue);
+
+                // only update it if there are any changes
+                if (stringValue !== this.minString) {
+                    this.set("minString", stringValue);
+                }
+            },
+            observeMax: function (newValue, oldValue) {
+                // get the date value as a string
+                var stringValue = this._dateToString(newValue);
+
+                // only update it if there are any changes
+                if (stringValue !== this.maxString) {
+                    this.set("maxString", stringValue);
+                }
+            },
+
+            observeStringValue: function (newValue, oldValue) {
+                // get the string value as a date
+                var value = this._stringToDate(newValue);
+
+                // only update it if there are any changes
+                if (this._dateToString(value) !== this._dateToString(this.value)) {
+                    this.set("value", value);
+                }
+            },
+
+            observeRequired: function (newValue, oldValue) {
+                this.$$("#datePicker").validator = (newValue === true) ? "date-validator" : null;
+            },
+
+            /* Listeners */
+            listeners: {},
+
+            /* Private */
+            _dateToString: function (date) {
+                // the date picker requires the date format YYYY-MM-DD
+                return date ? this.dateToIso(date).split("T")[0] : null;
+            },
+            _stringToDate: function (string) {
+                // parse a date from the string
+                if (string == null || string === "")
+                    return null;
+                var date = string.split("T")[0];
+                var ret = date && date !== "" && (date !== '1970-01-01' || this.allowEpoch) ? new Date(date) : null;
+                return ret;
+            },
+
+            /* Public */
+            validate: function () {
+                return this.$.datePicker.validate();
+            },
+            open: function () {
+                this.$.datePicker.open();
+            },
+
+            /* Lifecycle */
+            ready: function () {
+                this.$.datePicker._parseDate = this.getDate;
+                this.$.datePicker._formatISO = this.dateToIso;
+            }
+
+        });
+    </script>
+
+    <script>
+        document.addEventListener("WebComponentsReady", function () {
+            new Polymer.IronMeta({
+                type: "validator",
+                key: "date-validator",
+                value: {
+                    validate: function (value) {
+                        var date = Strolch.getDate(value);
+                        return date != null && !isNaN(date.getTime());
+                    }
+                }
+            });
+            //document.querySelector("#datePicker").validator = "date-validator";
+        });
+    </script>
+</dom-module>

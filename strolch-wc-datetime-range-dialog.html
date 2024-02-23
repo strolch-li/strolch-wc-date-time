@@ -1,0 +1,216 @@
+<!-- Imports -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../strolch-wc-styles/strolch-wc-app-style.html">
+<link rel="import" href="../strolch-wc-util-behavior/strolch-wc-component-behavior.html">
+
+<link rel="import" href="./strolch-wc-date-picker.html">
+<link rel="import" href="./strolch-wc-editable-time-picker.html">
+
+<dom-module id="strolch-wc-datetime-range-dialog">
+    <template>
+
+        <!-- Style -->
+        <style is="custom-style" include="strolch-wc-app-style">
+            :host {
+                display: block;
+            }
+
+            .title {
+                color: var(--paper-dialog-button-color);
+            }
+
+            paper-dialog {
+                min-width: 500px;
+            }
+
+            .dialog-headline {
+                padding: 0 8px;
+                margin: 8px 0;
+                @apply(--layout-horizontal);
+                @apply(--layout-center);
+            }
+        </style>
+
+        <template is="dom-if" if="[[opened]]" restamp>
+            <paper-dialog modal opened="{{opened}}">
+                <div class="dialog-headline">
+                    <paper-icon-button icon="icons:close" dialog-dismiss></paper-icon-button>
+                    <h2 class="title">[[dlgTitle]]</h2>
+                </div>
+                <div class="dialog-content">
+                    <p>[[dlgMsg]]</p>
+                    <div class="g-row">
+                        <div class="g-8">
+                            <strolch-wc-date-picker id="startDate"
+                                                    min="[[minDate]]"
+                                                    max="[[maxDate]]"
+                                                    label="[[localize('startDate')]]"
+                                                    value="{{startDate}}"></strolch-wc-date-picker>
+                        </div>
+                        <div class="g-4 g-pl-2">
+                            <strolch-wc-editable-time-picker id="startTime"
+                                                             label="[[localize('startTime')]]"
+                                                             increments="[[minuteIncrements]]"
+                                                             value="{{startTime}}"></strolch-wc-editable-time-picker>
+                        </div>
+                    </div>
+                    <div class="g-row">
+                        <div class="g-8">
+                            <strolch-wc-date-picker id="endDate"
+                                                    min="[[minDate]]"
+                                                    max="[[maxDate]]"
+                                                    label="[[localize('endDate')]]"
+                                                    value="{{endDate}}"></strolch-wc-date-picker>
+                        </div>
+                        <div class="g-4 g-pl-2">
+                            <strolch-wc-editable-time-picker id="endTime"
+                                                             label="[[localize('endTime')]]"
+                                                             increments="[[minuteIncrements]]"
+                                                             value="{{endTime}}"></strolch-wc-editable-time-picker>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <paper-button dialog-dismiss>[[localize('cancel')]]</paper-button>
+                    <paper-button autofocus on-tap="_confirm">[[localize(dlgConfirmBtnLbl)]]</paper-button>
+                </div>
+            </paper-dialog>
+        </template>
+
+    </template>
+
+    <script>
+        Polymer({
+
+            /* Component */
+            is: "strolch-wc-datetime-range-dialog",
+            behaviors: [
+                StrolchComponentBehavior
+            ],
+
+            /* Properties */
+            properties: {
+                opened: {
+                    type: Boolean,
+                    notify: true,
+                    value: false
+                },
+                dlgTitle: {
+                    type: String
+                },
+                dlgMsg: {
+                    type: String
+                },
+                dlgConfirmBtnLbl: {
+                    type: String,
+                    value: "select"
+                },
+                minDate: {
+                    type: Date,
+                    observer: "startDateChanged"
+                },
+                maxDate: {
+                    type: Date,
+                    observer: "startDateChanged"
+                },
+                startDate: {
+                    type: Date,
+                    observer: "startDateChanged"
+                },
+                endDate: {
+                    type: Date,
+                    observer: "endDateChanged"
+                },
+                startTime: {
+                    type: String,
+                    observer: "startTimeChanged"
+                },
+                endTime: {
+                    type: String
+                },
+                minuteIncrements: {
+                    type: Number,
+                    value: 30
+                },
+                autoDateInterval: {
+                    type: Number
+                },
+                confirmCallback: {
+                    type: Function
+                }
+            },
+
+            /* Computations */
+
+            /* Observers */
+            observers: [],
+            startDateChanged: function (newValue) {
+                this.endDateMin = newValue;
+                if (this.endDate != null && this.autoDateInterval != null) {
+                    var d = new Date(newValue);
+                    d.setDate(d.getDate() + this.autoDateInterval);
+                    this.endDate = d;
+                }
+            },
+            startTimeChanged: function (newValue) {
+                if (this.endDate != null && this.autoDateInterval != null) {
+                    this.endTime = newValue;
+                }
+            },
+            endDateChanged: function (newValue) {
+                const endTimeW = this.$$("#endTime");
+                if (newValue != null && endTimeW != null && (this.endTime == null || !endTimeW.validate())) {
+                    this.endTime = "00:00";
+                }
+            },
+
+            /* Public */
+            open: function () {
+                if (this.minDate != null) {
+                    this.startDate = this.minDate;
+                    this.startTime = "00:00";
+                } else {
+                    this.startDate = null;
+                    this.startTime = null;
+                }
+
+                if (this.autoDateInterval != null) {
+                    var d = new Date(this.startDate);
+                    d.setDate(d.getDate() + this.autoDateInterval);
+                    this.endDate = d;
+                    this.endTime = "00:00";
+                } else {
+                    this.endDate = null;
+                    this.endTime = null;
+                }
+
+                this.opened = true;
+            },
+            close: function () {
+                this.opened = false;
+            },
+
+            _confirm: function () {
+                if (this.startDate == null || !this.$$("#startDate").validate() || this.isEmptyString(this.startTime)) {
+                    this.showDialog("startDateInvalid", false);
+                    return;
+                }
+                if (!this.$$("#endDate").validate() || (this.endDate != null && this.isEmptyString(this.endTime))) {
+                    this.showDialog("endDateInvalid", false);
+                    return;
+                }
+
+                // add time component to dates
+                var startDate = this.$$("#startTime").getValueWithDate(this.startDate);
+                var endDate = this.$$("#endTime").getValueWithDate(this.endDate);
+
+                this.confirmCallback(startDate, endDate);
+            }
+        });
+    </script>
+</dom-module>
