@@ -1,7 +1,7 @@
 {
   "name": "strolch-wc-date-time",
   "description": "Strolch date time web components collection",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "authors": [
     "Robert von Burg"
   ],
