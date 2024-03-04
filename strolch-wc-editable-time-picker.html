@@ -155,8 +155,17 @@
                 return this.$.timeInput.validate();
             },
             getValueWithDate: function (date) {
-                if (this.value == null || date == null)
+                if (this.value == null && date == null) {
+                    date = new Date(0);
+                    date.setSeconds(0);
+                    date.setMilliseconds(0);
+                    date.setHours(0);
+                    date.setMinutes(0);
                     return date;
+                }
+
+                if (date == null)
+                    date = new Date(0);
 
                 var split = this.value.split(":");
                 if (split.length !== 2)
